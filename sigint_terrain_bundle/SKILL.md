@@ -204,11 +204,13 @@ ports:
 ## Canonical Layer Order
 1. Base imagery / neutral substrate — normal
 2. DEM hillshade — overlay, 55–65%
-3. Contour or hachure slope overlay — multiply, 100%
-4. Confidence stipple — screen, variable by provenance
-5. Uncertainty wash — normal, variable by age tier
-6. Denied-zone crosshatch — normal, 100%
+3. Contour or hachure slope overlay — multiply, 100% — see [pattern card](../docs/pattern_cards/slope_hachure.md)
+4. Confidence stipple — screen, variable by provenance — see [pattern card](../docs/pattern_cards/confidence_stipple.md)
+5. Uncertainty wash — normal, variable by age tier — see [pattern card](../docs/pattern_cards/uncertainty_wash.md)
+6. Denied-zone crosshatch — normal, 100% — see [pattern card](../docs/pattern_cards/denied_zones.md)
 7. Scan-line overlay — normal, 4%, live feeds only
+
+> Visual reference for the full stack: [layer_stack pattern card](../docs/pattern_cards/layer_stack.md). Palette tokens: [tokens.json](tokens.json).
 
 # Input Normalization
 Before any rendering:

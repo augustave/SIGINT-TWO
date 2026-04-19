@@ -1,6 +1,13 @@
-# SIGINT Terrain Rendering Engine — v2.0
+# SIGINT Terrain Rendering Engine — v2.1
+
+[![validate](https://github.com/augustave/SIGINT-TWO/actions/workflows/validate.yml/badge.svg)](https://github.com/augustave/SIGINT-TWO/actions/workflows/validate.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Pages](https://img.shields.io/badge/pages-augustave.github.io%2FSIGINT--TWO-blue)](https://augustave.github.io/SIGINT-TWO/)
 
 > A deterministic compiler that transforms terrain elevation, telemetry freshness, provenance, and denied-space geometry into audit-friendly tactical 2D/3D outputs. **The system acts like a compiler, not a stylist.**
+
+📐 **Visual reference site:** [augustave.github.io/SIGINT-TWO](https://augustave.github.io/SIGINT-TWO/) — pattern cards, layer stack, palette tokens.
+📖 **Glossary:** [GLOSSARY.md](GLOSSARY.md) — domain acronyms (SIGINT, NAVD88, Fresnel, DSM, EOIR, …)
 
 ---
 
@@ -21,28 +28,31 @@ This bundle locks down those semantics. The renderer is required to fail loudly 
 ## Repository Layout
 
 ```
-sigint_terrain_bundle/
-├── PRD.yaml                                    # Product requirements (scope, personas, success metrics)
-├── SKILL.md                                    # Full doctrine: invariants, layer order, profiles, output modes
-├── SWARM.md                                    # Multi-agent topology and coordination protocol
-├── common-schema.yaml                          # JSON Schema Draft 2020-12 contracts
-├── conformance/
-│   ├── README.md                               # Conformance kit overview
-│   ├── sample_render_state_manifest.json       # Canonical example manifest
-│   └── sample_verification_report.md           # Canonical example verification report
-└── fixtures/
-    ├── nyc_harbor_low_relief/                  # Happy-path fixture (warn status)
-    │   ├── input.json
-    │   ├── expected_manifest.json
-    │   ├── expected_warnings.json
-    │   ├── expected_verification.json
-    │   └── expected_verification.md
-    └── missing_timestamp_los_blocked/          # Hard-stop fixture (blocked status)
-        ├── input.json
-        ├── expected_manifest.json
-        ├── expected_warnings.json
-        ├── expected_verification.json
-        └── expected_verification.md
+.
+├── README.md                                   # You are here
+├── GLOSSARY.md                                 # Domain acronyms
+├── LICENSE                                     # MIT
+├── sigint_terrain_bundle/                      # Specification bundle
+│   ├── PRD.yaml                                # Product requirements
+│   ├── SKILL.md                                # Full doctrine
+│   ├── SWARM.md                                # Multi-agent topology
+│   ├── common-schema.yaml                      # JSON Schema Draft 2020-12 contracts
+│   ├── tokens.json                             # Palette source of truth
+│   ├── conformance/
+│   │   ├── README.md
+│   │   ├── sample_render_state_manifest.json
+│   │   └── sample_verification_report.md
+│   └── fixtures/
+│       ├── nyc_harbor_low_relief/              # Happy path → warn
+│       └── missing_timestamp_los_blocked/      # Hard stop → blocked
+├── docs/                                       # GitHub Pages site
+│   ├── index.md                                # Visual landing page
+│   ├── pattern_cards/                          # 5 doctrine pattern cards
+│   └── patterns/                               # 17 generated SVG primitives
+├── scripts/
+│   ├── build_patterns.py                       # Regenerate SVGs from tokens.json
+│   └── validate.py                             # Conformance validator
+└── .github/workflows/validate.yml              # CI: schema + fixtures + pattern regen
 ```
 
 ---
@@ -201,39 +211,18 @@ A safety-relevant LOS request against a feed with no `timestamp_utc`. Tests the 
 
 ## Local Validation
 
-Validate the schema and fixtures with Python:
-
 ```bash
 pip install pyyaml jsonschema
-
-python3 - <<'EOF'
-import yaml, json
-from jsonschema import Draft202012Validator
-
-with open("sigint_terrain_bundle/common-schema.yaml") as f:
-    schema = yaml.safe_load(f)
-
-manifest_schema = {
-    "$schema": "https://json-schema.org/draft/2020-12/schema",
-    "$defs": schema["$defs"],
-    **schema["$defs"]["render_state_manifest"]
-}
-
-for path in [
-    "sigint_terrain_bundle/conformance/sample_render_state_manifest.json",
-    "sigint_terrain_bundle/fixtures/nyc_harbor_low_relief/expected_manifest.json",
-    "sigint_terrain_bundle/fixtures/missing_timestamp_los_blocked/expected_manifest.json",
-]:
-    with open(path) as f:
-        instance = json.load(f)
-    errors = list(Draft202012Validator(manifest_schema).iter_errors(instance))
-    print(f"{'PASS' if not errors else 'FAIL'} {path}")
-    for e in errors:
-        print(f"  - {e.message}")
-EOF
+python3 scripts/validate.py
 ```
 
-Expected output: `PASS` on all three.
+Expected output: every check passes, exit code 0. The same script runs in CI on every push. To regenerate SVG pattern primitives from `tokens.json`:
+
+```bash
+python3 scripts/build_patterns.py
+```
+
+Patterns are committed to `docs/patterns/`; CI will fail if the committed copy drifts from what the script emits.
 
 ---
 

@@ -1,0 +1,7 @@
+[
+  {
+    "code": "FEED_FRESHNESS_UNDEFINED",
+    "rationale": "feed_alpha_eoir has no timestamp_utc. A safety-relevant LOS request (los_check mode) was made against a feed with unknown age. Per doctrine, unknown timestamps must never be assigned CURRENT or RECENT tier. The renderer must block the LOS output and emit a hard warning rather than produce an ambiguous trust signal.",
+    "required_action": "Halt LOS computation. Set los_check result to UNKNOWN. Suppress all overlays dependent on feed freshness. Do not display CURRENT or RECENT uncertainty wash for this feed."
+  }
+]

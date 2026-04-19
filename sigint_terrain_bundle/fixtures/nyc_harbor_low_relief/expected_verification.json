@@ -1,0 +1,80 @@
+{
+  "overall_status": "warn",
+  "checks": [
+    {
+      "check_id": "layer_compositing_audit",
+      "status": "pass",
+      "message": "Active and suppressed layers preserve canonical order 2-5-6 active, 3-4-7 suppressed.",
+      "evidence": [
+        "Manifest layer order follows canonical stack.",
+        "Suppressed layers remain logged with original positions."
+      ]
+    },
+    {
+      "check_id": "terrain_profile_compliance_check",
+      "status": "pass",
+      "message": "NYC littoral low-relief profile applied with z-exaggeration 3.0, contour interval 5m, and hillshade altitude 35 degrees.",
+      "evidence": [
+        "terrain_profile_override.name == nyc_littoral_low_relief",
+        "manifest.z_exaggeration == 3.0"
+      ]
+    },
+    {
+      "check_id": "datum_normalization_check",
+      "status": "pass",
+      "message": "Bathymetry transformed from MLLW into NAVD88 before water-crossing profile generation.",
+      "evidence": [
+        "terrain_dem_bathymetric.requires_transform_to == NAVD88",
+        "warning bathymetry_merged present"
+      ]
+    },
+    {
+      "check_id": "timestamp_provenance_check",
+      "status": "pass",
+      "message": "Feed timestamp normalized and correctly bucketed as AGING; CURRENT state not used.",
+      "evidence": [
+        "Feed timestamp 2026-03-26T12:10:00Z",
+        "Fixture assumes render time after 2026-03-26T15:10:00Z",
+        "uncertainty_wash.tier == AGING"
+      ]
+    },
+    {
+      "check_id": "mobile_texture_budget_check",
+      "status": "warn",
+      "message": "Field tablet budget enforced by suppressing contour_hachure and confidence_stipple.",
+      "evidence": [
+        "device_class == field_tablet",
+        "three active textures retained",
+        "REDUCED_SEMANTIC_FIDELITY warning present"
+      ]
+    },
+    {
+      "check_id": "los_geometry_validation",
+      "status": "pass",
+      "message": "Observer-target transect intersects masking terrain/structure, producing LOS_MASKED.",
+      "evidence": [
+        "observer_point and target_point provided",
+        "analysis_products.los_check == LOS_MASKED"
+      ]
+    },
+    {
+      "check_id": "fresnel_equation_validation",
+      "status": "pass",
+      "message": "C-band first Fresnel zone clearance fails for the supplied transect, producing FAILED_C_BAND.",
+      "evidence": [
+        "analysis_request.frequency_class == C_BAND",
+        "analysis_products.fresnel_check == FAILED_C_BAND"
+      ]
+    },
+    {
+      "check_id": "palette_compliance_check",
+      "status": "pass",
+      "message": "Manifest implies tactical_hypso, denied red family, and bounded uncertainty wash; no illegal rainbow palette introduced.",
+      "evidence": [
+        "Denied zone uses canonical crosshatch",
+        "Only doctrinal layer IDs appear in fixture"
+      ]
+    }
+  ],
+  "blocking_errors": []
+}

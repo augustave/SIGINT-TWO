@@ -1,0 +1,65 @@
+{
+  "overall_status": "blocked",
+  "checks": [
+    {
+      "check_id": "layer_compositing_audit",
+      "status": "pass",
+      "message": "Active layers follow canonical order. Suppressed layers all carry reasons.",
+      "evidence": [
+        "base_imagery at order 1",
+        "hillshade_oblique at order 2",
+        "all suppressed layers include reason field"
+      ]
+    },
+    {
+      "check_id": "palette_compliance",
+      "status": "pass",
+      "message": "No illegal palette applied. Hillshade substrate only.",
+      "evidence": [
+        "no hypsometric rainbow palette present",
+        "no decorative denied zone pattern present"
+      ]
+    },
+    {
+      "check_id": "terrain_profile_compliance",
+      "status": "pass",
+      "message": "nyc_littoral_low_relief profile applied with correct parameters.",
+      "evidence": [
+        "z_exaggeration = 3.0",
+        "hillshade_altitude_deg = 35",
+        "contour_interval_m = 5"
+      ]
+    },
+    {
+      "check_id": "timestamp_provenance_check",
+      "status": "fail",
+      "message": "feed_alpha_eoir has no timestamp_utc. Feed freshness is undefined. Safety-relevant LOS request cannot proceed.",
+      "evidence": [
+        "feed_alpha_eoir.timestamp_utc absent",
+        "analysis_request.modes includes los_check",
+        "doctrine prohibits CURRENT/RECENT assignment for unknown timestamps"
+      ]
+    },
+    {
+      "check_id": "los_geometry_validation",
+      "status": "blocked",
+      "message": "LOS computation blocked. Feed freshness is undefined; result would carry an unverifiable trust signal.",
+      "evidence": [
+        "los_check result set to UNKNOWN",
+        "FEED_FRESHNESS_UNDEFINED warning emitted"
+      ]
+    },
+    {
+      "check_id": "mobile_texture_budget_check",
+      "status": "pass",
+      "message": "desktop_analyst device class — no texture budget constraint.",
+      "evidence": [
+        "device_budget = desktop_analyst",
+        "full layer stack permitted"
+      ]
+    }
+  ],
+  "blocking_errors": [
+    "FEED_FRESHNESS_UNDEFINED: feed_alpha_eoir missing timestamp_utc. LOS output blocked. CURRENT and RECENT tiers prohibited for this feed."
+  ]
+}

@@ -1,0 +1,61 @@
+{
+  "terrain_profile": "nyc_littoral_low_relief",
+  "vertical_datum": "NAVD88",
+  "water_crossing": false,
+  "z_exaggeration": 3.0,
+  "device_budget": "desktop_analyst",
+  "layers_active": [
+    {
+      "id": "base_imagery",
+      "order": 1,
+      "blend": "normal",
+      "opacity": 1.0
+    },
+    {
+      "id": "hillshade_oblique",
+      "order": 2,
+      "blend": "overlay",
+      "opacity": 0.6
+    }
+  ],
+  "layers_suppressed": [
+    {
+      "id": "contour_hachure",
+      "order": 3,
+      "blend": "multiply",
+      "reason": "blocked_feed_freshness_undefined"
+    },
+    {
+      "id": "confidence_stipple",
+      "order": 4,
+      "blend": "screen",
+      "reason": "blocked_feed_freshness_undefined"
+    },
+    {
+      "id": "uncertainty_wash",
+      "order": 5,
+      "blend": "normal",
+      "reason": "blocked_feed_freshness_undefined_cannot_assign_tier"
+    },
+    {
+      "id": "denied_zone_crosshatch",
+      "order": 6,
+      "blend": "normal",
+      "reason": "blocked_feed_freshness_undefined"
+    },
+    {
+      "id": "scan_line_overlay",
+      "order": 7,
+      "blend": "normal",
+      "reason": "blocked_feed_freshness_undefined"
+    }
+  ],
+  "warnings": [
+    "FEED_FRESHNESS_UNDEFINED"
+  ],
+  "analysis_products": {
+    "elevation_profile": false,
+    "los_check": "UNKNOWN",
+    "terrain_3d": false
+  }
+}

@@ -1,0 +1,64 @@
+{
+  "terrain_dem_topographic": {
+    "source": "nyc_topo_navd88_1m.tif",
+    "format": "geotiff",
+    "resolution_m": 1,
+    "vertical_datum": "NAVD88",
+    "bounds": {
+      "min_lat": 40.68,
+      "min_lon": -74.04,
+      "max_lat": 40.72,
+      "max_lon": -74.00
+    }
+  },
+  "telemetry_tracks": {
+    "observer": {
+      "lat": 40.7015,
+      "lon": -74.0122,
+      "height_m_agl": 18
+    },
+    "target": {
+      "lat": 40.6897,
+      "lon": -74.0266,
+      "height_m_agl": 8
+    }
+  },
+  "sensor_feed_registry": [
+    {
+      "feed_id": "feed_alpha_eoir",
+      "provenance_class": "medium_confidence",
+      "modality": "EOIR",
+      "live_state": "cached"
+    }
+  ],
+  "analysis_request": {
+    "modes": ["map_only", "los_check"],
+    "observer_point": {
+      "lat": 40.7015,
+      "lon": -74.0122,
+      "height_m_agl": 18
+    },
+    "target_point": {
+      "lat": 40.6897,
+      "lon": -74.0266,
+      "height_m_agl": 8
+    },
+    "transect_id": "txn_blocked_001"
+  },
+  "viewport_context": {
+    "device_class": "desktop_analyst",
+    "width_px": 2560,
+    "height_px": 1440,
+    "zoom_level": 15.0,
+    "pitch_deg": 0,
+    "target_fps": 30,
+    "supports_blend_modes": true,
+    "gpu_tier": "high"
+  },
+  "terrain_profile_override": {
+    "name": "nyc_littoral_low_relief",
+    "z_exaggeration": 3.0,
+    "contour_interval_m": 5,
+    "hillshade_altitude_deg": 35
+  }
+}

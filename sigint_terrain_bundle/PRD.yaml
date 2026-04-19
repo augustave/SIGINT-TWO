@@ -1,0 +1,256 @@
+product:
+  name: SIGINT Terrain Rendering Engine
+  version: "2.0.0"
+  owner: tactical-geospatial-visualization
+  status: draft_for_build
+  category: tactical_geospatial_rendering
+  summary: >
+    Build a deterministic rendering engine that transforms terrain elevation,
+    telemetry freshness, provenance, and denied-space geometry into audit-friendly
+    tactical 2D/3D outputs. The system must act like a compiler, not a stylist.
+
+Traditional_Approach:
+  objective: >
+    Implement the SIGINT-TERRAIN doctrine as a stable rendering pipeline with
+    explicit layer order, terrain profile selection, LOS/Fresnel analysis, and
+    reproducible output manifests.
+  user_problem: >
+    Current terrain/tactical rendering systems often collapse operational meaning
+    into visual taste, making it too easy for texture, freshness, and denied-space
+    semantics to drift between screens or device classes.
+  users:
+    - name: Analyst
+      need: reliable 2D terrain reading with provenance and freshness cues
+    - name: Field Operator
+      need: degraded but truthful overlays on constrained devices
+    - name: Technical Integrator
+      need: consistent field names, package structure, and verification outputs
+  success_metrics:
+    - name: layer_order_compliance_rate
+      target: ">= 100%"
+    - name: timestamp_handling_false_current_rate
+      target: "0%"
+    - name: mobile_texture_budget_pass_rate
+      target: ">= 95%"
+    - name: manifest_reproducibility_rate
+      target: ">= 95%"
+    - name: los_fresnel_validation_pass_rate
+      target: ">= 95%"
+
+Innovative_Approach:
+  thesis: >
+    Treat rendering as evidence handling. The UI is not only a map surface;
+    it is a visible audit trail of terrain truth, feed freshness, provenance,
+    and denial logic. Beauty is permitted only when it survives verification.
+  design_principles:
+    - texture_is_semantics
+    - compositing_is_law
+    - degradation_must_be_visible
+    - terrain_profiles_are_first_class
+    - verification_outputs_are_product_features
+  product_wedge: >
+    Most systems render terrain. This system renders terrain plus trust state,
+    device degradation, and provenance as machine-checkable outputs.
+
+scope:
+  in_scope:
+    - topographic DEM ingestion
+    - optional bathymetric DEM merge with datum normalization
+    - terrain profile inference and override
+    - hillshade generation
+    - contour or hachure generation
+    - provenance / confidence stipple generation
+    - uncertainty wash by feed age
+    - denied zone crosshatch overlays
+    - line-of-sight profile generation
+    - first Fresnel zone clearance analysis
+    - canonical layer stack compilation
+    - device-budget degradation logic
+    - manifest + verification report + zip packaging
+  out_of_scope:
+    - consumer mapping UX
+    - freehand cartographic styling controls
+    - generalized mission planning backend
+    - full GIS editing suite
+    - real-time multiplayer command workflows
+
+personas:
+  - id: analyst_desktop
+    context: fixed workstation with full GPU budget
+    primary_modes: [map_only, slope_overlay, elevation_profile, los_check, fresnel_check, terrain_3d]
+    constraints:
+      - must preserve full semantic stack when possible
+  - id: field_tablet
+    context: constrained but modern field display
+    primary_modes: [map_only, slope_overlay, elevation_profile, los_check]
+    constraints:
+      - max_three_simultaneous_textures
+      - 3D optional, not assumed
+  - id: degraded_edge_device
+    context: low-capability or degraded graphics support
+    primary_modes: [map_only, los_check]
+    constraints:
+      - hillshade_plus_one_operational_overlay_only
+      - no silent degradation
+
+functional_requirements:
+  - id: FR-001
+    title: Ingest topographic terrain source
+    requirement: Must ingest DEM with bounds, resolution, and vertical datum metadata.
+  - id: FR-002
+    title: Support bathymetric merge
+    requirement: Must merge bathymetry only after explicit datum normalization.
+  - id: FR-003
+    title: Infer terrain profile
+    requirement: Must infer or apply named terrain profile before rendering begins.
+  - id: FR-004
+    title: Generate hillshade substrate
+    requirement: Must generate hillshade with profile-specific sun altitude and canonical opacity band.
+  - id: FR-005
+    title: Generate contours/hachure
+    requirement: Must generate slope-readable contour or hachure overlays based on slope bands and request mode.
+  - id: FR-006
+    title: Compute feed freshness
+    requirement: Must normalize timestamps to UTC and assign CURRENT, RECENT, AGING, STALE, or HISTORICAL tier.
+  - id: FR-007
+    title: Encode provenance confidence
+    requirement: Must map provenance/source class to visible confidence stipple behavior.
+  - id: FR-008
+    title: Compile denied zone overlays
+    requirement: Must render denied geometry with canonical red-family crosshatch.
+  - id: FR-009
+    title: Compute LOS output
+    requirement: Must sample observer-target transect and label clear or masked state.
+  - id: FR-010
+    title: Compute Fresnel output
+    requirement: Must compute first Fresnel clearance using declared frequency class.
+  - id: FR-011
+    title: Apply degradation ladder
+    requirement: Must suppress layers by documented priority according to device class.
+  - id: FR-012
+    title: Emit reproducible manifest
+    requirement: Must log all active layers, suppressed layers, terrain profile, warnings, and analysis products.
+  - id: FR-013
+    title: Emit verification report
+    requirement: Must output pass/fail checks for doctrine-critical behaviors.
+
+non_functional_requirements:
+  performance:
+    desktop:
+      target_fps: 30
+      notes: full 7-layer stack allowed
+    field_tablet:
+      target_fps: 24
+      notes: max 3 simultaneous textures
+    degraded_edge_device:
+      target_fps: 15
+      notes: reduce to hillshade + 1 operational overlay
+  reliability:
+    - no unknown timestamps may appear as CURRENT or RECENT
+    - no water-crossing profile may omit bathymetry status
+    - no optional 3D mode may bypass fidelity gates
+  auditability:
+    - every suppressed layer needs a reason
+    - every warning must appear in manifest and verification report
+    - every Fresnel result must include declared frequency class
+
+rendering_doctrine:
+  canonical_layer_order:
+    - base_imagery_or_neutral_substrate
+    - dem_hillshade
+    - contour_or_hachure
+    - confidence_stipple
+    - uncertainty_wash
+    - denied_zone_crosshatch
+    - scan_line_overlay
+  palette_rules:
+    allow:
+      - tactical_hypso
+      - slope_severity
+      - denied_red_family
+      - uncertainty_wash_orange_red_family
+    disallow:
+      - rainbow_hypsometric_palettes
+      - decorative_denied_zone_patterns
+      - freshness_tints_outside_defined_buckets
+
+terrain_profiles:
+  required_profiles:
+    - standard_regional
+    - nyc_littoral_low_relief
+    - alpine_high_delta_z
+    - urban_canyon_lidar
+  nyc_littoral_low_relief:
+    z_exaggeration: 3.0
+    contour_interval_m: 5
+    hillshade_altitude_deg: 35
+    hypsometric_bands: first_5_only
+    require_bathymetry_merge_if_water_crossing: true
+  alpine_high_delta_z:
+    z_exaggeration_min: 1.0
+    z_exaggeration_max: 1.5
+  urban_canyon_lidar:
+    prefer_bare_earth_dem: true
+    los_requires_building_contamination_warning_if_dsm_used: true
+
+api_contracts:
+  schema_source: ./common-schema.yaml
+  required_top_level_objects:
+    - analysis_request
+    - viewport_context
+    - terrain_profile
+    - render_state_manifest
+    - verification_report
+
+acceptance_tests:
+  - id: AT-001
+    scenario: NYC harbor transect with topo + bathy + LOS request
+    expected:
+      - terrain_profile == nyc_littoral_low_relief
+      - z_exaggeration == 3.0
+      - bathymetry status present
+      - elevation profile generated
+  - id: AT-002
+    scenario: Missing timestamp in safety-relevant overlay
+    expected:
+      - CURRENT tier prohibited
+      - warning emitted
+      - degraded or blocked state logged
+  - id: AT-003
+    scenario: Field tablet render request with full overlay demand
+    expected:
+      - max 3 simultaneous textures
+      - suppressed layers logged with reasons
+  - id: AT-004
+    scenario: Water-crossing profile without bathymetric DEM
+    expected:
+      - blocking warning or explicit unavailable status
+  - id: AT-005
+    scenario: High-delta mountain viewport in 3D
+    expected:
+      - z exaggeration clamped per alpine profile
+      - no mesh tearing tolerance breach
+  - id: AT-006
+    scenario: Fresnel request without declared frequency class
+    expected:
+      - request fails validation
+
+delivery:
+  engineering_outputs:
+    - SKILL.md-aligned execution logic
+    - common-schema.yaml data contracts
+    - render_state_manifest.json output
+    - verification_report.md output
+    - zipped rendering package
+  packaging_structure:
+    - /layers
+    - /patterns
+    - /shaders
+    - /profiles
+    - /render_state_manifest.json
+    - /verification_report.md
+
+open_questions:
+  - Should scan-line overlays exist as shader-only behavior or also as SVG/CSS export tokens?
+  - Should terrain_profile inference be rules-only or allow learned heuristics later?
+  - Should profile generator support multiple Fresnel zones later or remain first-zone only in v2?

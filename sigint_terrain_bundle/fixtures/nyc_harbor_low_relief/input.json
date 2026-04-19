@@ -1,0 +1,140 @@
+{
+  "fixture_id": "nyc_harbor_low_relief_v1",
+  "description": "NYC harbor crossing on constrained field tablet with AGING feed, denied zone overlay, bathymetry merge, LOS and Fresnel analysis.",
+  "terrain_dem_topographic": {
+    "source_id": "dem_nyc_bare_earth_1m",
+    "format": "cog",
+    "vertical_datum": "NAVD88",
+    "resolution_m": 1.0,
+    "bounds": {
+      "min_lat": 40.682,
+      "min_lon": -74.0405,
+      "max_lat": 40.7138,
+      "max_lon": -73.9755
+    }
+  },
+  "terrain_dem_bathymetric": {
+    "source_id": "bathy_upper_bay_5m",
+    "format": "geotiff",
+    "vertical_datum": "MLLW",
+    "resolution_m": 5.0,
+    "requires_transform_to": "NAVD88"
+  },
+  "telemetry_tracks": [
+    {
+      "track_id": "sensor_alpha",
+      "kind": "observer",
+      "lat": 40.7015,
+      "lon": -74.0122,
+      "height_m_agl": 18,
+      "timestamp_utc": "2026-03-26T12:10:00Z"
+    },
+    {
+      "track_id": "target_bravo",
+      "kind": "target",
+      "lat": 40.6897,
+      "lon": -74.0266,
+      "height_m_agl": 8,
+      "timestamp_utc": "2026-03-26T12:10:00Z"
+    }
+  ],
+  "threat_geometry": {
+    "type": "FeatureCollection",
+    "features": [
+      {
+        "type": "Feature",
+        "properties": {
+          "zone_id": "dz_red_01",
+          "kind": "denied_zone",
+          "severity": "high"
+        },
+        "geometry": {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [
+                -74.0285,
+                40.6945
+              ],
+              [
+                -74.0165,
+                40.6945
+              ],
+              [
+                -74.0165,
+                40.7018
+              ],
+              [
+                -74.0285,
+                40.7018
+              ],
+              [
+                -74.0285,
+                40.6945
+              ]
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  "sensor_feed_registry": [
+    {
+      "feed_id": "feed_eoir_harbor_01",
+      "timestamp_utc": "2026-03-26T12:10:00Z",
+      "provenance_class": "medium_confidence",
+      "modality": "EOIR",
+      "live_state": "cached"
+    }
+  ],
+  "analysis_request": {
+    "modes": [
+      "map_only",
+      "elevation_profile",
+      "los_check",
+      "fresnel_check"
+    ],
+    "observer_point": {
+      "lat": 40.7015,
+      "lon": -74.0122,
+      "height_m_agl": 18
+    },
+    "target_point": {
+      "lat": 40.6897,
+      "lon": -74.0266,
+      "height_m_agl": 8
+    },
+    "frequency_class": "C_BAND",
+    "transect_id": "transect_upper_bay_01",
+    "requested_output_ids": [
+      "main_map",
+      "transect_panel",
+      "los_overlay",
+      "fresnel_overlay"
+    ]
+  },
+  "viewport_context": {
+    "device_class": "field_tablet",
+    "width_px": 1536,
+    "height_px": 1024,
+    "zoom_level": 16.8,
+    "pitch_deg": 18,
+    "target_fps": 24,
+    "supports_blend_modes": true,
+    "gpu_tier": "medium"
+  },
+  "terrain_profile_override": {
+    "name": "nyc_littoral_low_relief",
+    "z_exaggeration": 3.0,
+    "contour_interval_m": 5,
+    "hillshade_altitude_deg": 35,
+    "hypsometric_bands": "first_5_only",
+    "require_bathymetry_merge": true,
+    "warnings": []
+  },
+  "expected_runtime_notes": [
+    "Datum normalization from MLLW to NAVD88 is required before bathymetry merge.",
+    "Field tablet budget allows no more than three simultaneous textures.",
+    "Zoom > 16 in NYC littoral profile requires urban LiDAR building filter warning when applicable."
+  ]
+}

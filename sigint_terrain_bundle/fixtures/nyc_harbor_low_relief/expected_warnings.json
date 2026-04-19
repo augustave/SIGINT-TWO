@@ -1,0 +1,17 @@
+{
+  "fixture_id": "nyc_harbor_low_relief_v1",
+  "expected_warnings": [
+    {
+      "code": "bathymetry_merged",
+      "why": "Transect crosses harbor water and bathymetry was transformed into NAVD88 before merge."
+    },
+    {
+      "code": "urban_lidar_filter_applied",
+      "why": "Viewport exceeds zoom 16 in NYC low-relief profile, so building contamination filtering should be declared."
+    },
+    {
+      "code": "REDUCED_SEMANTIC_FIDELITY",
+      "why": "Field tablet degradation suppressed contour/hachure and confidence stipple to remain within the three-texture budget."
+    }
+  ]
+}

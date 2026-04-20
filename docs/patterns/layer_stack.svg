@@ -2,18 +2,18 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="520" height="240" viewBox="0 0 520 240">
 <rect width="520" height="240" fill="#fdfcf8"/>
   <rect x="20" y="30" width="180" height="14" fill="#cfd2c7" fill-opacity="0.85" stroke="#222" stroke-width="0.5"/>
-  <text x="210" y="41" font-family="monospace" font-size="11" fill="#111">1. base imagery</text>
+  <text x="210" y="41" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#111">1. base imagery</text>
   <rect x="20" y="54" width="180" height="14" fill="#9aa097" fill-opacity="0.85" stroke="#222" stroke-width="0.5"/>
-  <text x="210" y="65" font-family="monospace" font-size="11" fill="#111">2. hillshade (overlay, 55-65%)</text>
+  <text x="210" y="65" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#111">2. hillshade (overlay, 55-65%)</text>
   <rect x="20" y="78" width="180" height="14" fill="#3f4a4f" fill-opacity="0.85" stroke="#222" stroke-width="0.5"/>
-  <text x="210" y="89" font-family="monospace" font-size="11" fill="#111">3. contour / hachure (multiply)</text>
+  <text x="210" y="89" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#111">3. contour / hachure (multiply)</text>
   <rect x="20" y="102" width="180" height="14" fill="#1c1c1c" fill-opacity="0.85" stroke="#222" stroke-width="0.5"/>
-  <text x="210" y="113" font-family="monospace" font-size="11" fill="#111">4. confidence stipple (screen)</text>
+  <text x="210" y="113" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#111">4. confidence stipple (screen)</text>
   <rect x="20" y="126" width="180" height="14" fill="#e76f51" fill-opacity="0.85" stroke="#222" stroke-width="0.5"/>
-  <text x="210" y="137" font-family="monospace" font-size="11" fill="#111">5. uncertainty wash (by age tier)</text>
+  <text x="210" y="137" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#111">5. uncertainty wash (by age tier)</text>
   <rect x="20" y="150" width="180" height="14" fill="#b1241c" fill-opacity="0.85" stroke="#222" stroke-width="0.5"/>
-  <text x="210" y="161" font-family="monospace" font-size="11" fill="#111">6. denied crosshatch (red family)</text>
+  <text x="210" y="161" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#111">6. denied crosshatch (red family)</text>
   <rect x="20" y="174" width="180" height="14" fill="#9bd1ff" fill-opacity="0.85" stroke="#222" stroke-width="0.5"/>
-  <text x="210" y="185" font-family="monospace" font-size="11" fill="#111">7. scan lines (live feeds, 4%)</text>
-<text x="20" y="20" font-family="monospace" font-size="11" fill="#111" font-weight="bold">Canonical Layer Order (bottom → top)</text>
+  <text x="210" y="185" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#111">7. scan lines (live feeds, 4%)</text>
+<text x="20" y="20" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#111" font-weight="bold">Canonical Layer Order (bottom → top)</text>
 </svg>

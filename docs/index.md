@@ -35,6 +35,14 @@ This bundle locks down those semantics. The renderer is required to **fail loudl
 
 ---
 
+## Design System Overview
+
+The full doctrine surface — terrain textures, confidence/uncertainty washes, slope severity with mobility classes, hypsometric tinting, and the canonical NYC harbor elevation profile — on the dark tactical substrate.
+
+<img src="patterns/design_system_overview.svg" width="100%"/>
+
+---
+
 ## The 7-Layer Canonical Stack
 
 <img src="patterns/layer_stack.svg" width="560"/>
@@ -99,11 +107,13 @@ Wash saturation encodes feed age. CURRENT shows nothing. **A feed with no timest
 
 ### [Slope Hachure](pattern_cards/slope_hachure.md)
 
-Hachure spacing encodes slope severity.
+Hachure spacing encodes slope severity. Each band carries a doctrine **mobility classification**.
 
-| 5–15° | 15–30° | 30–45° | 45°+ |
-|---|---|---|---|
-| <img src="patterns/slope_hachure_slope_5_15.svg" width="120"/> | <img src="patterns/slope_hachure_slope_15_30.svg" width="120"/> | <img src="patterns/slope_hachure_slope_30_45.svg" width="120"/> | <img src="patterns/slope_hachure_slope_45_up.svg" width="120"/> |
+<img src="patterns/slope_severity_bar.svg" width="100%"/>
+
+| 3–10° (wheeled) | 10–20° (tracked) | 20–30° (dismount) | 30–45° (technical) | 45–90° (cliff) |
+|---|---|---|---|---|
+| <img src="patterns/slope_hachure_slope_3_10.svg" width="120"/> | <img src="patterns/slope_hachure_slope_10_20.svg" width="120"/> | <img src="patterns/slope_hachure_slope_20_30.svg" width="120"/> | <img src="patterns/slope_hachure_slope_30_45.svg" width="120"/> | <img src="patterns/slope_hachure_slope_45_up.svg" width="120"/> |
 
 ### [Denied / Contested Zones](pattern_cards/denied_zones.md)
 
@@ -117,11 +127,27 @@ Applied only to live ingest surfaces. Never to archived stills or analysis expor
 
 <img src="patterns/scan_line_overlay.svg" width="280"/>
 
-### Tactical Hypsometric Bands (first 5 only)
+### Tactical Hypsometric Tinting
 
-The only permitted hypsometric palette. Rainbow ramps are prohibited.
+The only permitted continuous hypsometric ramp — bathymetric through alpine. Rainbow ramps are prohibited. The first five above-zero bands are the subset used by `nyc_littoral_low_relief`.
 
-<img src="patterns/tactical_hypso_first_5.svg" width="480"/>
+<img src="patterns/tactical_hypso_first_5.svg" width="100%"/>
+
+### Hillshade Grain & Contour Hachure
+
+Hillshade is the substrate; contours are the iso-elevation overlay. Both shown here as reference swatches; production rendering is computed from the DEM.
+
+| Hillshade grain | Contour hachure |
+|---|---|
+| <img src="patterns/hillshade_grain.svg" width="200"/> | <img src="patterns/contour_hachure.svg" width="200"/> |
+
+---
+
+## NYC Harbor Elevation Profile
+
+Doctrine reference for the `elevation_profile` output mode under the `nyc_littoral_low_relief` terrain profile. Cross-harbor transect with NAVD88 vertical datum, 5 m contour interval, z-exaggeration 3.0×, and bathymetric merge.
+
+<img src="patterns/elevation_profile_nyc_harbor.svg" width="100%"/>
 
 ---
 

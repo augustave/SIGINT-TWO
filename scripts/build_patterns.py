@@ -2,19 +2,18 @@
 """Generate canonical SIGINT Terrain SVG pattern primitives from tokens.json.
 
 Single source of truth: sigint_terrain_bundle/tokens.json.
-Output directory: sigint_terrain_bundle/patterns/.
+Output directory: docs/patterns/ (also the GitHub Pages source path).
 
 Run from repo root:
     python3 scripts/build_patterns.py
 """
 
 import json
-import os
+import math
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 TOKENS_PATH = REPO_ROOT / "sigint_terrain_bundle" / "tokens.json"
-# Canonical location, also served by GitHub Pages (source = /docs).
 OUT_DIR = REPO_ROOT / "docs" / "patterns"
 
 SVG_W = 200
@@ -43,103 +42,204 @@ def write(path: Path, content: str):
     print(f"  wrote {path.relative_to(REPO_ROOT)}")
 
 
-def stipple_svg(dot_radius_px: float, spacing_px: int, fill: str, label: str) -> str:
+# ---------- panel-style primitives (dark tactical substrate) ----------
+
+def dark_panel(width, height, bg):
+    return f'<rect width="{width}" height="{height}" fill="{bg}"/>\n'
+
+
+def stipple_swatch(dot_r, spacing, fill, bg, label, sub):
     body = svg_open()
-    body += f'<rect width="{SVG_W}" height="{SVG_H}" fill="#f4f1ea"/>\n'
+    body += dark_panel(SVG_W, SVG_H, bg)
     body += f'<g fill="{fill}">\n'
-    y = spacing_px / 2
+    y = spacing / 2
     while y < SVG_H:
-        offset = (spacing_px / 2) if int(y / spacing_px) % 2 else 0
-        x = offset + spacing_px / 2
+        offset = (spacing / 2) if int(y / spacing) % 2 else 0
+        x = offset + spacing / 2
         while x < SVG_W:
-            body += f'  <circle cx="{x:.2f}" cy="{y:.2f}" r="{dot_radius_px}"/>\n'
-            x += spacing_px
-        y += spacing_px
+            body += f'  <circle cx="{x:.2f}" cy="{y:.2f}" r="{dot_r}"/>\n'
+            x += spacing
+        y += spacing
     body += "</g>\n"
-    body += f'<text x="6" y="{SVG_H - 6}" font-family="monospace" font-size="9" fill="#222">{label}</text>\n'
+    body += f'<text x="6" y="{SVG_H - 18}" font-family="ui-monospace,Menlo,monospace" font-size="9" fill="{sub}">{label}</text>\n'
     body += svg_close()
     return body
 
 
-def hachure_svg(spacing_px: int, stroke_width_px: float, stroke: str, label: str) -> str:
+def hachure_swatch(spacing, sw, stroke, bg, fill_tint, label, sub):
     body = svg_open()
-    body += f'<rect width="{SVG_W}" height="{SVG_H}" fill="#eef0ec"/>\n'
-    if spacing_px > 0:
-        body += f'<g stroke="{stroke}" stroke-width="{stroke_width_px}" stroke-linecap="round">\n'
+    body += dark_panel(SVG_W, SVG_H, bg)
+    if fill_tint:
+        body += f'<rect width="{SVG_W}" height="{SVG_H}" fill="{fill_tint}" fill-opacity="0.25"/>\n'
+    if spacing > 0:
+        body += f'<g stroke="{stroke}" stroke-width="{sw}" stroke-linecap="round">\n'
         x = -SVG_H
         while x < SVG_W:
             body += f'  <line x1="{x}" y1="{SVG_H}" x2="{x + SVG_H}" y2="0"/>\n'
-            x += spacing_px
+            x += spacing
         body += "</g>\n"
-    body += f'<text x="6" y="{SVG_H - 6}" font-family="monospace" font-size="9" fill="#222">{label}</text>\n'
+    body += f'<text x="6" y="{SVG_H - 18}" font-family="ui-monospace,Menlo,monospace" font-size="9" fill="{sub}">{label}</text>\n'
     body += svg_close()
     return body
 
 
-def crosshatch_svg(stroke: str, fill_tint: str, fill_alpha: float, spacing_px: int, stroke_width: float) -> str:
+def crosshatch_swatch(stroke, fill_tint, fill_alpha, spacing, sw, bg):
     body = svg_open()
-    body += f'<rect width="{SVG_W}" height="{SVG_H}" fill="#eef0ec"/>\n'
+    body += dark_panel(SVG_W, SVG_H, bg)
     body += f'<rect width="{SVG_W}" height="{SVG_H}" fill="{fill_tint}" fill-opacity="{fill_alpha}"/>\n'
-    body += f'<g stroke="{stroke}" stroke-width="{stroke_width}">\n'
+    body += f'<g stroke="{stroke}" stroke-width="{sw}">\n'
     x = -SVG_H
     while x < SVG_W:
         body += f'  <line x1="{x}" y1="{SVG_H}" x2="{x + SVG_H}" y2="0"/>\n'
-        x += spacing_px
+        x += spacing
     x = -SVG_H
     while x < SVG_W:
         body += f'  <line x1="{x}" y1="0" x2="{x + SVG_H}" y2="{SVG_H}"/>\n'
-        x += spacing_px
+        x += spacing
     body += "</g>\n"
-    body += '<text x="6" y="94" font-family="monospace" font-size="9" fill="#fff">DENIED</text>\n'
+    body += f'<text x="6" y="{SVG_H - 6}" font-family="ui-monospace,Menlo,monospace" font-size="9" fill="#ffd0cb">DENIED</text>\n'
     body += svg_close()
     return body
 
 
-def wash_svg(fill: str, alpha: float, label: str) -> str:
+def hillshade_grain_swatch(tokens):
+    h = tokens["palettes"]["hillshade_grain"]
+    bg = h["fill"]
+    grain = h["grain_fill"]
     body = svg_open()
-    # checkerboard substrate for transparency reference
-    body += '<g fill="#dcdcdc">\n'
-    for yi in range(0, SVG_H, 10):
-        for xi in range(0, SVG_W, 10):
-            if (xi // 10 + yi // 10) % 2 == 0:
-                body += f'  <rect x="{xi}" y="{yi}" width="10" height="10" fill="#ececec"/>\n'
+    body += dark_panel(SVG_W, SVG_H, bg)
+    # diagonal soft "ridges"
+    body += f'<g stroke="{grain}" stroke-width="0.6" stroke-opacity="0.7">\n'
+    for i in range(-SVG_H, SVG_W, 14):
+        body += f'  <path d="M {i},{SVG_H} Q {i + SVG_H/2},{SVG_H/2 - 6} {i + SVG_H},0" fill="none"/>\n'
     body += "</g>\n"
-    if alpha > 0:
-        body += f'<rect width="{SVG_W}" height="{SVG_H}" fill="{fill}" fill-opacity="{alpha}"/>\n'
-    body += f'<text x="6" y="{SVG_H - 6}" font-family="monospace" font-size="9" fill="#111">{label}</text>\n'
+    body += f'<text x="6" y="{SVG_H - 6}" font-family="ui-monospace,Menlo,monospace" font-size="9" fill="#cfd2c7">hillshade grain</text>\n'
     body += svg_close()
     return body
 
 
-def scan_lines_svg(stroke: str, stroke_width: float, spacing_px: int, alpha: float) -> str:
+def contour_hachure_swatch(tokens):
+    c = tokens["palettes"]["contour_hachure"]
+    bg = tokens["substrate"]["tactical_dark_panel"]
+    sub = tokens["substrate"]["tactical_text_secondary"]
     body = svg_open()
-    body += '<rect width="200" height="100" fill="#0d1014"/>\n'
-    body += f'<g stroke="{stroke}" stroke-width="{stroke_width}" stroke-opacity="{alpha * 25:.2f}">\n'
+    body += dark_panel(SVG_W, SVG_H, bg)
+    body += f'<g stroke="{c["stroke"]}" stroke-width="{c["stroke_width_px"]}" fill="none" stroke-opacity="0.85">\n'
+    for i, y_base in enumerate(range(-10, SVG_H + 10, c["spacing_px"])):
+        # gentle curving iso-line
+        body += (
+            f'  <path d="M 0,{y_base} '
+            f'Q {SVG_W * 0.25},{y_base - 4} {SVG_W * 0.5},{y_base} '
+            f'T {SVG_W},{y_base}" />\n'
+        )
+    body += "</g>\n"
+    body += f'<text x="6" y="{SVG_H - 6}" font-family="ui-monospace,Menlo,monospace" font-size="9" fill="{sub}">contour hachure</text>\n'
+    body += svg_close()
+    return body
+
+
+# ---------- uncertainty wash with internal motif ----------
+
+def wash_motif(motif, fill, alpha, label, bg, sub, accent):
+    body = svg_open()
+    body += dark_panel(SVG_W, SVG_H, bg)
+    body += f'<rect width="{SVG_W}" height="{SVG_H}" fill="{fill}" fill-opacity="{alpha}"/>\n'
+    if motif == "grid":
+        body += '<g stroke="#1a3a2a" stroke-width="0.6" stroke-opacity="0.7">\n'
+        for x in range(0, SVG_W, 10):
+            body += f'  <line x1="{x}" y1="0" x2="{x}" y2="{SVG_H}"/>\n'
+        for y in range(0, SVG_H, 10):
+            body += f'  <line x1="0" y1="{y}" x2="{SVG_W}" y2="{y}"/>\n'
+        body += "</g>\n"
+    elif motif in ("wave_low", "wave_mid"):
+        amp = 2 if motif == "wave_low" else 4
+        spacing = 14 if motif == "wave_low" else 12
+        body += '<g stroke="#cfb27a" stroke-width="0.7" stroke-opacity="0.55" fill="none">\n'
+        for y0 in range(8, SVG_H, spacing):
+            d = [f"M 0 {y0}"]
+            for x in range(0, SVG_W + 1, 8):
+                yy = y0 + amp * math.sin(x / 6.0)
+                d.append(f"L {x} {yy:.2f}")
+            body += f'  <path d="{" ".join(d)}"/>\n'
+        body += "</g>\n"
+    elif motif == "tick_dense":
+        body += '<g stroke="#e8a3a0" stroke-width="0.6" stroke-opacity="0.55">\n'
+        for y in range(6, SVG_H, 6):
+            for x in range(2, SVG_W, 7):
+                body += f'  <line x1="{x}" y1="{y}" x2="{x + 3}" y2="{y}"/>\n'
+        body += "</g>\n"
+    elif motif == "chevron":
+        body += '<g stroke="#e8a3a0" stroke-width="0.7" stroke-opacity="0.55" fill="none">\n'
+        for y in range(8, SVG_H + 8, 10):
+            for x in range(0, SVG_W, 16):
+                body += f'  <path d="M {x} {y} L {x + 8} {y - 4} L {x + 16} {y}"/>\n'
+        body += "</g>\n"
+    body += f'<text x="6" y="{SVG_H - 6}" font-family="ui-monospace,Menlo,monospace" font-size="9" fill="{sub}">{label}</text>\n'
+    body += svg_close()
+    return body
+
+
+# ---------- scan lines ----------
+
+def scan_lines_swatch(stroke, sw, spacing, alpha, bg):
+    body = svg_open()
+    body += dark_panel(SVG_W, SVG_H, bg)
+    body += f'<g stroke="{stroke}" stroke-width="{sw}" stroke-opacity="{min(0.9, alpha * 18):.2f}">\n'
     y = 0
     while y < SVG_H:
         body += f'  <line x1="0" y1="{y}" x2="{SVG_W}" y2="{y}"/>\n'
-        y += spacing_px
+        y += spacing
     body += "</g>\n"
-    body += '<text x="6" y="94" font-family="monospace" font-size="9" fill="#9bd1ff" fill-opacity="0.8">SCAN-LIVE</text>\n'
+    body += '<text x="6" y="94" font-family="ui-monospace,Menlo,monospace" font-size="9" fill="#9bd1ff" fill-opacity="0.8">scan lines</text>\n'
     body += svg_close()
     return body
 
 
-def hypso_swatch_svg(bands) -> str:
-    body = svg_open(width=SVG_W, height=SVG_H)
-    band_w = SVG_W / len(bands)
+# ---------- hypsometric continuous ramp ----------
+
+def hypso_ramp(bands, bg, sub):
+    W, H = 720, 80
+    body = svg_open(width=W, height=H)
+    body += dark_panel(W, H, bg)
+    n = len(bands)
+    band_w = (W - 20) / n
     for i, b in enumerate(bands):
-        x = i * band_w
-        body += f'  <rect x="{x}" y="0" width="{band_w}" height="{SVG_H - 18}" fill="{b["fill"]}"/>\n'
+        x = 10 + i * band_w
+        body += f'  <rect x="{x:.2f}" y="14" width="{band_w + 0.5:.2f}" height="36" fill="{b["fill"]}"/>\n'
         body += (
-            f'  <text x="{x + 4}" y="{SVG_H - 4}" font-family="monospace" font-size="8" fill="#111">{b["label"]}</text>\n'
+            f'  <text x="{x:.2f}" y="68" font-family="ui-monospace,Menlo,monospace" '
+            f'font-size="11" fill="{sub}">{b["label"]}</text>\n'
         )
     body += svg_close()
     return body
 
 
-def layer_stack_svg() -> str:
-    """Schematic of the 7 canonical layers, side-on."""
+# ---------- slope severity bar with mobility labels ----------
+
+def slope_bar(bands, bg, sub):
+    W, H = 720, 90
+    body = svg_open(width=W, height=H)
+    body += dark_panel(W, H, bg)
+    n = len(bands)
+    band_w = (W - 20) / n
+    for i, b in enumerate(bands):
+        x = 10 + i * band_w
+        body += f'  <rect x="{x:.2f}" y="14" width="{band_w - 4:.2f}" height="34" fill="{b["fill"]}" fill-opacity="0.85"/>\n'
+        body += (
+            f'  <text x="{x + (band_w - 4) / 2:.2f}" y="36" text-anchor="middle" '
+            f'font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#e6e9ec">{b["label"]}</text>\n'
+        )
+        body += (
+            f'  <text x="{x + (band_w - 4) / 2:.2f}" y="70" text-anchor="middle" '
+            f'font-family="ui-monospace,Menlo,monospace" font-size="11" fill="{sub}">{b["mobility"]}</text>\n'
+        )
+    body += svg_close()
+    return body
+
+
+# ---------- canonical layer stack schematic ----------
+
+def layer_stack_svg():
     W, H = 520, 240
     body = svg_open(width=W, height=H)
     body += f'<rect width="{W}" height="{H}" fill="#fdfcf8"/>\n'
@@ -155,15 +255,346 @@ def layer_stack_svg() -> str:
     y = 30
     for name, color in layers:
         body += f'  <rect x="20" y="{y}" width="180" height="14" fill="{color}" fill-opacity="0.85" stroke="#222" stroke-width="0.5"/>\n'
-        body += f'  <text x="210" y="{y + 11}" font-family="monospace" font-size="11" fill="#111">{name}</text>\n'
+        body += f'  <text x="210" y="{y + 11}" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#111">{name}</text>\n'
         y += 24
-    body += '<text x="20" y="20" font-family="monospace" font-size="11" fill="#111" font-weight="bold">Canonical Layer Order (bottom \u2192 top)</text>\n'
+    body += '<text x="20" y="20" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#111" font-weight="bold">Canonical Layer Order (bottom \u2192 top)</text>\n'
     body += svg_close()
     return body
 
 
+# ---------- NYC harbor elevation profile ----------
+
+def elevation_profile_nyc(tokens):
+    bg = tokens["substrate"]["tactical_dark_bg"]
+    grid = tokens["substrate"]["tactical_grid_line"]
+    txt = tokens["substrate"]["tactical_text_primary"]
+    sub = tokens["substrate"]["tactical_text_secondary"]
+    blue = tokens["substrate"]["tactical_accent_blue"]
+    green = tokens["substrate"]["tactical_accent_green"]
+    W, H = 960, 460
+    body = svg_open(width=W, height=H)
+    body += dark_panel(W, H, bg)
+
+    # title block
+    body += (f'<text x="20" y="28" font-family="ui-monospace,Menlo,monospace" font-size="14" '
+             f'fill="{txt}" font-weight="bold">NYC datum elevation profile</text>\n')
+    body += (f'<text x="20" y="48" font-family="ui-monospace,Menlo,monospace" font-size="11" '
+             f'fill="{sub}">Cross-harbor transect — 40\u00b0 41\' N, 74\u00b0 02\' W \u2192 73\u00b0 55\' W</text>\n')
+
+    # axes
+    plot_x0, plot_x1 = 90, W - 30
+    plot_y0, plot_y1 = 80, H - 60
+    elev_max, elev_min = 150, -30  # m
+    def y_for(elev):
+        return plot_y1 - (elev - elev_min) / (elev_max - elev_min) * (plot_y1 - plot_y0)
+
+    # grid + y labels
+    body += f'<g stroke="{grid}" stroke-width="0.6">\n'
+    for e in (-20, 0, 75, 125):
+        yy = y_for(e)
+        body += f'  <line x1="{plot_x0}" y1="{yy:.1f}" x2="{plot_x1}" y2="{yy:.1f}"/>\n'
+    body += "</g>\n"
+    for e, label, color in [(-20, "-20m", sub), (0, "0m MSL", blue), (75, "75m", sub), (125, "125m", sub)]:
+        yy = y_for(e)
+        body += (f'<text x="{plot_x0 - 8}" y="{yy + 4:.1f}" text-anchor="end" '
+                 f'font-family="ui-monospace,Menlo,monospace" font-size="11" fill="{color}">{label}</text>\n')
+
+    # x labels
+    for km, label in [(0, "0 km"), (3, "3 km"), (6, "6 km"), (9, "9 km"), (11.5, "11.5 km")]:
+        xx = plot_x0 + (km / 11.5) * (plot_x1 - plot_x0)
+        body += (f'<text x="{xx:.1f}" y="{H - 30}" text-anchor="middle" '
+                 f'font-family="ui-monospace,Menlo,monospace" font-size="11" fill="{sub}">{label}</text>\n')
+
+    # terrain profile (Todt Hill 125m → harbor -16 → Brooklyn Heights 28 → small dip → Prospect Park 60)
+    samples = [
+        (0.0, 95), (0.5, 110), (1.0, 125), (1.6, 90), (2.2, 30), (2.8, -8),
+        (3.4, -16), (4.0, -10), (4.6, 5), (5.4, 25), (6.0, 28), (6.7, 14),
+        (7.3, 8), (8.0, 22), (8.7, 45), (9.2, 60), (9.8, 50), (10.6, 35), (11.5, 28),
+    ]
+    pts = [(plot_x0 + (km / 11.5) * (plot_x1 - plot_x0), y_for(e)) for km, e in samples]
+    # fill above terrain — soft tactical wash
+    fill_d = ["M", f"{pts[0][0]:.1f}", f"{plot_y0:.1f}"]
+    for x, y in pts:
+        fill_d += ["L", f"{x:.1f}", f"{y:.1f}"]
+    fill_d += ["L", f"{pts[-1][0]:.1f}", f"{plot_y0:.1f}", "Z"]
+    body += f'<path d="{" ".join(fill_d)}" fill="#2a3036" fill-opacity="0.6"/>\n'
+    # bathymetric fill (below 0)
+    bathy_d = ["M", f"{pts[0][0]:.1f}", f"{y_for(0):.1f}"]
+    for x, y in pts:
+        bathy_d += ["L", f"{x:.1f}", f"{max(y, y_for(0)):.1f}"]
+    bathy_d += ["L", f"{pts[-1][0]:.1f}", f"{y_for(0):.1f}", "Z"]
+    body += f'<path d="{" ".join(bathy_d)}" fill="#0f2433" fill-opacity="0.85"/>\n'
+
+    # terrain stroke
+    line_d = ["M"] + [f"{pts[0][0]:.1f},{pts[0][1]:.1f}"]
+    for x, y in pts[1:]:
+        line_d += ["L", f"{x:.1f},{y:.1f}"]
+    body += f'<path d="{" ".join(line_d)}" fill="none" stroke="#cfd2c7" stroke-width="1.4"/>\n'
+
+    # MSL line
+    msl = y_for(0)
+    body += f'<line x1="{plot_x0}" y1="{msl:.1f}" x2="{plot_x1}" y2="{msl:.1f}" stroke="{blue}" stroke-width="0.8" stroke-opacity="0.8"/>\n'
+
+    # callouts
+    callouts = [
+        (1.0, 125, "Todt Hill 125m", txt),
+        (6.0, 28, "Brooklyn Heights 28m", txt),
+        (9.2, 60, "Prospect Park 60m", txt),
+        (3.4, -16, "Harbor -16m", blue),
+    ]
+    for km, elev, label, color in callouts:
+        xx = plot_x0 + (km / 11.5) * (plot_x1 - plot_x0)
+        yy = y_for(elev)
+        # tick line up to label
+        ly = max(yy - 36, plot_y0 + 12) if elev >= 0 else min(yy + 36, plot_y1 - 14)
+        body += f'<line x1="{xx:.1f}" y1="{yy:.1f}" x2="{xx:.1f}" y2="{ly:.1f}" stroke="{color}" stroke-width="0.6" stroke-opacity="0.6"/>\n'
+        anchor = "middle"
+        body += (f'<text x="{xx:.1f}" y="{ly - 4 if elev >= 0 else ly + 12:.1f}" text-anchor="{anchor}" '
+                 f'font-family="ui-monospace,Menlo,monospace" font-size="13" fill="{color}">{label}</text>\n')
+
+    # DATUM marker
+    dx = plot_x0 + (10.4 / 11.5) * (plot_x1 - plot_x0)
+    dy = y_for(12)
+    body += f'<circle cx="{dx:.1f}" cy="{dy:.1f}" r="5" fill="{green}"/>\n'
+    body += (f'<text x="{dx + 10:.1f}" y="{dy + 5:.1f}" font-family="ui-monospace,Menlo,monospace" '
+             f'font-size="13" fill="{green}">DATUM 12m</text>\n')
+
+    # footer
+    body += (f'<text x="20" y="{H - 10}" font-family="ui-monospace,Menlo,monospace" font-size="10" '
+             f'fill="{sub}">z-exag: 3.0x   contour: 5m   sun alt: 35\u00b0   vert datum: NAVD88</text>\n')
+
+    body += svg_close()
+    return body
+
+
+# ---------- design system overview poster ----------
+
+def design_system_overview(tokens):
+    bg = tokens["substrate"]["tactical_dark_bg"]
+    panel = tokens["substrate"]["tactical_dark_panel"]
+    txt = tokens["substrate"]["tactical_text_primary"]
+    sub = tokens["substrate"]["tactical_text_secondary"]
+    accent = tokens["substrate"]["tactical_accent_green"]
+
+    W, H = 1240, 720
+    body = svg_open(width=W, height=H)
+    body += dark_panel(W, H, bg)
+
+    # title
+    body += (f'<text x="24" y="30" font-family="ui-monospace,Menlo,monospace" font-size="11" '
+             f'fill="{accent}">SIGINT-TERRAIN v1.1 — TEXTURES &amp; ELEVATIONS</text>\n')
+
+    # ---- Terrain surface textures ----
+    body += (f'<text x="24" y="70" font-family="ui-monospace,Menlo,monospace" font-size="14" '
+             f'fill="{txt}" font-weight="bold">Terrain surface textures</text>\n')
+    sw_y = 84
+    sw_w, sw_h, sw_gap = 116, 70, 16
+    cs = tokens["palettes"]["confidence_stipple"]
+    surface_swatches = [
+        ("hillshade grain",        "hillshade"),
+        ("contour hachure",        "contour"),
+        ("stipple - low conf",     ("stipple", "interpolated")),
+        ("stipple - high conf",    ("stipple", "high_res_lidar")),
+        ("scan lines",             "scan"),
+        ("denied zone",            "denied"),
+    ]
+    for i, (label, kind) in enumerate(surface_swatches):
+        x = 24 + i * (sw_w + sw_gap)
+        body += f'  <rect x="{x}" y="{sw_y}" width="{sw_w}" height="{sw_h}" fill="{panel}" stroke="#1c2228" stroke-width="0.6"/>\n'
+        # render swatch contents
+        if kind == "hillshade":
+            body += f'  <g transform="translate({x},{sw_y})">'
+            body += f'<rect width="{sw_w}" height="{sw_h}" fill="{tokens["palettes"]["hillshade_grain"]["fill"]}"/>'
+            body += f'<g stroke="{tokens["palettes"]["hillshade_grain"]["grain_fill"]}" stroke-width="0.5" stroke-opacity="0.7" fill="none">'
+            for j in range(-sw_h, sw_w, 14):
+                body += f'<path d="M {j} {sw_h} Q {j + sw_h/2} {sw_h/2 - 5} {j + sw_h} 0"/>'
+            body += "</g></g>\n"
+        elif kind == "contour":
+            c = tokens["palettes"]["contour_hachure"]
+            body += f'  <g transform="translate({x},{sw_y})" stroke="{c["stroke"]}" stroke-width="0.7" fill="none" stroke-opacity="0.85">'
+            for yb in range(-4, sw_h + 4, 10):
+                body += f'<path d="M 0 {yb} Q {sw_w * 0.3} {yb - 4} {sw_w * 0.6} {yb} T {sw_w} {yb}"/>'
+            body += "</g>\n"
+        elif isinstance(kind, tuple) and kind[0] == "stipple":
+            cls = next(c for c in cs["classes"] if c["name"] == kind[1])
+            body += f'  <g transform="translate({x},{sw_y})" fill="{cs["fill"]}">'
+            yy = cls["spacing_px"] / 2
+            while yy < sw_h:
+                offset = (cls["spacing_px"] / 2) if int(yy / cls["spacing_px"]) % 2 else 0
+                xx = offset + cls["spacing_px"] / 2
+                while xx < sw_w:
+                    body += f'<circle cx="{xx:.2f}" cy="{yy:.2f}" r="{cls["dot_radius_px"]}"/>'
+                    xx += cls["spacing_px"]
+                yy += cls["spacing_px"]
+            body += "</g>\n"
+        elif kind == "scan":
+            sl = tokens["palettes"]["scan_line_overlay"]
+            body += f'  <g transform="translate({x},{sw_y})" stroke="{sl["stroke"]}" stroke-width="{sl["stroke_width_px"]}" stroke-opacity="0.7">'
+            yy = 0
+            while yy < sw_h:
+                body += f'<line x1="0" y1="{yy}" x2="{sw_w}" y2="{yy}"/>'
+                yy += sl["spacing_px"]
+            body += "</g>\n"
+        elif kind == "denied":
+            d = tokens["palettes"]["denied_red_family"]
+            body += f'  <g transform="translate({x},{sw_y})">'
+            body += f'<rect width="{sw_w}" height="{sw_h}" fill="{d["fill_tint"]}" fill-opacity="{d["fill_tint_alpha"]}"/>'
+            body += f'<g stroke="{d["stroke"]}" stroke-width="{d["stroke_width_px"]}">'
+            xx = -sw_h
+            while xx < sw_w:
+                body += f'<line x1="{xx}" y1="{sw_h}" x2="{xx + sw_h}" y2="0"/>'
+                xx += d["spacing_px"]
+            xx = -sw_h
+            while xx < sw_w:
+                body += f'<line x1="{xx}" y1="0" x2="{xx + sw_h}" y2="{sw_h}"/>'
+                xx += d["spacing_px"]
+            body += "</g></g>\n"
+        body += (f'  <text x="{x}" y="{sw_y + sw_h + 18}" font-family="ui-monospace,Menlo,monospace" '
+                 f'font-size="11" fill="{sub}">{label}</text>\n')
+
+    # ---- Data confidence / uncertainty wash ----
+    right_x = 660
+    body += (f'<text x="{right_x}" y="70" font-family="ui-monospace,Menlo,monospace" font-size="14" '
+             f'fill="{txt}" font-weight="bold">Data confidence / uncertainty wash</text>\n')
+    tiers = tokens["palettes"]["uncertainty_wash_orange_red_family"]["tiers"]
+    tw, th, tgap = 100, 70, 14
+    for i, t in enumerate(tiers):
+        x = right_x + i * (tw + tgap)
+        body += f'  <rect x="{x}" y="{sw_y}" width="{tw}" height="{th}" fill="{panel}"/>\n'
+        body += f'  <rect x="{x}" y="{sw_y}" width="{tw}" height="{th}" fill="{t["fill"]}" fill-opacity="{t["alpha"]}"/>\n'
+        # motif overlay (simplified)
+        m = t["motif"]
+        if m == "grid":
+            body += f'  <g transform="translate({x},{sw_y})" stroke="#1a3a2a" stroke-width="0.5" stroke-opacity="0.7">'
+            for gx in range(0, tw, 10):
+                body += f'<line x1="{gx}" y1="0" x2="{gx}" y2="{th}"/>'
+            for gy in range(0, th, 10):
+                body += f'<line x1="0" y1="{gy}" x2="{tw}" y2="{gy}"/>'
+            body += "</g>\n"
+        elif m in ("wave_low", "wave_mid"):
+            amp = 2 if m == "wave_low" else 4
+            body += f'  <g transform="translate({x},{sw_y})" stroke="#cfb27a" stroke-width="0.7" stroke-opacity="0.55" fill="none">'
+            for y0 in range(8, th, 12):
+                d = [f"M 0 {y0}"]
+                for xx in range(0, tw + 1, 8):
+                    yy = y0 + amp * math.sin(xx / 5.0)
+                    d.append(f"L {xx} {yy:.2f}")
+                body += f'<path d="{" ".join(d)}"/>'
+            body += "</g>\n"
+        elif m == "tick_dense":
+            body += f'  <g transform="translate({x},{sw_y})" stroke="#e8a3a0" stroke-width="0.6" stroke-opacity="0.55">'
+            for yy in range(6, th, 6):
+                for xx in range(2, tw, 6):
+                    body += f'<line x1="{xx}" y1="{yy}" x2="{xx + 3}" y2="{yy}"/>'
+            body += "</g>\n"
+        elif m == "chevron":
+            body += f'  <g transform="translate({x},{sw_y})" stroke="#e8a3a0" stroke-width="0.7" stroke-opacity="0.55" fill="none">'
+            for yy in range(8, th + 8, 10):
+                for xx in range(0, tw, 16):
+                    body += f'<path d="M {xx} {yy} L {xx + 8} {yy - 4} L {xx + 16} {yy}"/>'
+            body += "</g>\n"
+        body += (f'  <text x="{x}" y="{sw_y + th + 18}" font-family="ui-monospace,Menlo,monospace" '
+                 f'font-size="11" fill="{sub}">{t["name"]} {t["label"]}</text>\n')
+
+    # ---- Slope severity bands ----
+    body += (f'<text x="24" y="220" font-family="ui-monospace,Menlo,monospace" font-size="14" '
+             f'fill="{txt}" font-weight="bold">Slope severity bands</text>\n')
+    bands = tokens["palettes"]["slope_severity"]["bands"]
+    bar_x, bar_y = 24, 234
+    bar_total_w = 612
+    n = len(bands)
+    band_w = bar_total_w / n
+    for i, b in enumerate(bands):
+        x = bar_x + i * band_w
+        body += f'  <rect x="{x:.1f}" y="{bar_y}" width="{band_w - 2:.1f}" height="34" fill="{b["fill"]}" fill-opacity="0.85"/>\n'
+        body += (f'  <text x="{x + (band_w - 2) / 2:.1f}" y="{bar_y + 21}" text-anchor="middle" '
+                 f'font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#e6e9ec">{b["label"]}</text>\n')
+        body += (f'  <text x="{x + (band_w - 2) / 2:.1f}" y="{bar_y + 56}" text-anchor="middle" '
+                 f'font-family="ui-monospace,Menlo,monospace" font-size="11" fill="{sub}">{b["mobility"]}</text>\n')
+
+    # ---- Hypsometric tinting palette ----
+    body += (f'<text x="{right_x}" y="220" font-family="ui-monospace,Menlo,monospace" font-size="14" '
+             f'fill="{txt}" font-weight="bold">Hypsometric tinting — tactical palette</text>\n')
+    hbands = tokens["palettes"]["tactical_hypso"]["bands"]
+    hx, hy, hw = right_x, 234, 540
+    hb_w = hw / len(hbands)
+    for i, b in enumerate(hbands):
+        x = hx + i * hb_w
+        body += f'  <rect x="{x:.1f}" y="{hy}" width="{hb_w + 0.5:.1f}" height="34" fill="{b["fill"]}"/>\n'
+        body += (f'  <text x="{x:.1f}" y="{hy + 56}" font-family="ui-monospace,Menlo,monospace" '
+                 f'font-size="11" fill="{sub}">{b["label"]}</text>\n')
+
+    # ---- Footer ----
+    body += (f'<text x="24" y="{H - 16}" font-family="ui-monospace,Menlo,monospace" font-size="10" '
+             f'fill="{accent}">SIGINT-TERRAIN v1.1 — DARK RELIEF — MGRS 18T WL 85438 05964</text>\n')
+
+    # ---- mini elevation profile bottom ----
+    mini_x0, mini_y0 = 24, 340
+    mini_w, mini_h = 1192, 320
+    body += f'  <rect x="{mini_x0}" y="{mini_y0}" width="{mini_w}" height="{mini_h}" fill="{panel}" stroke="#1c2228"/>\n'
+    body += (f'<text x="{mini_x0 + 16}" y="{mini_y0 + 22}" font-family="ui-monospace,Menlo,monospace" '
+             f'font-size="13" fill="{txt}" font-weight="bold">NYC datum elevation profile</text>\n')
+    body += (f'<text x="{mini_x0 + 16}" y="{mini_y0 + 38}" font-family="ui-monospace,Menlo,monospace" '
+             f'font-size="10" fill="{sub}">Cross-harbor transect — 40\u00b0 41\' N, 74\u00b0 02\' W \u2192 73\u00b0 55\' W</text>\n')
+
+    # plot inside
+    pp_x0, pp_x1 = mini_x0 + 80, mini_x0 + mini_w - 30
+    pp_y0, pp_y1 = mini_y0 + 60, mini_y0 + mini_h - 40
+    elev_max, elev_min = 150, -30
+    def yfn(e):
+        return pp_y1 - (e - elev_min) / (elev_max - elev_min) * (pp_y1 - pp_y0)
+
+    for e, label in [(-20, "-20m"), (0, "0m MSL"), (75, "75m"), (125, "125m")]:
+        yy = yfn(e)
+        col = tokens["substrate"]["tactical_accent_blue"] if e == 0 else sub
+        body += f'  <line x1="{pp_x0}" y1="{yy:.1f}" x2="{pp_x1}" y2="{yy:.1f}" stroke="#1c2228" stroke-width="0.6"/>\n'
+        body += (f'  <text x="{pp_x0 - 8}" y="{yy + 4:.1f}" text-anchor="end" font-family="ui-monospace,Menlo,monospace" '
+                 f'font-size="10" fill="{col}">{label}</text>\n')
+
+    samples = [(0.0,95),(0.5,110),(1.0,125),(1.6,90),(2.2,30),(2.8,-8),(3.4,-16),(4.0,-10),(4.6,5),
+               (5.4,25),(6.0,28),(6.7,14),(7.3,8),(8.0,22),(8.7,45),(9.2,60),(9.8,50),(10.6,35),(11.5,28)]
+    pts = [(pp_x0 + (km / 11.5) * (pp_x1 - pp_x0), yfn(e)) for km, e in samples]
+    fd = ["M", f"{pts[0][0]:.1f}", f"{pp_y0:.1f}"]
+    for x, y in pts: fd += ["L", f"{x:.1f}", f"{y:.1f}"]
+    fd += ["L", f"{pts[-1][0]:.1f}", f"{pp_y0:.1f}", "Z"]
+    body += f'<path d="{" ".join(fd)}" fill="#2a3036" fill-opacity="0.55"/>\n'
+    bd = ["M", f"{pts[0][0]:.1f}", f"{yfn(0):.1f}"]
+    for x, y in pts: bd += ["L", f"{x:.1f}", f"{max(y, yfn(0)):.1f}"]
+    bd += ["L", f"{pts[-1][0]:.1f}", f"{yfn(0):.1f}", "Z"]
+    body += f'<path d="{" ".join(bd)}" fill="#0f2433" fill-opacity="0.85"/>\n'
+    ld = ["M"] + [f"{pts[0][0]:.1f},{pts[0][1]:.1f}"]
+    for x, y in pts[1:]: ld += ["L", f"{x:.1f},{y:.1f}"]
+    body += f'<path d="{" ".join(ld)}" fill="none" stroke="#cfd2c7" stroke-width="1.4"/>\n'
+    body += f'<line x1="{pp_x0}" y1="{yfn(0):.1f}" x2="{pp_x1}" y2="{yfn(0):.1f}" stroke="{tokens["substrate"]["tactical_accent_blue"]}" stroke-width="0.7" stroke-opacity="0.8"/>\n'
+
+    for km, elev, label, color in [(1.0,125,"Todt Hill 125m",txt),(6.0,28,"Brooklyn Heights 28m",txt),
+                                    (9.2,60,"Prospect Park 60m",txt),(3.4,-16,"Harbor -16m",tokens["substrate"]["tactical_accent_blue"])]:
+        xx = pp_x0 + (km / 11.5) * (pp_x1 - pp_x0)
+        yy = yfn(elev)
+        ly = yy - 28 if elev >= 0 else yy + 22
+        body += f'<line x1="{xx:.1f}" y1="{yy:.1f}" x2="{xx:.1f}" y2="{ly:.1f}" stroke="{color}" stroke-width="0.5" stroke-opacity="0.6"/>\n'
+        body += (f'<text x="{xx:.1f}" y="{ly - 4 if elev >= 0 else ly + 12:.1f}" text-anchor="middle" '
+                 f'font-family="ui-monospace,Menlo,monospace" font-size="11" fill="{color}">{label}</text>\n')
+
+    dx = pp_x0 + (10.4 / 11.5) * (pp_x1 - pp_x0)
+    dy = yfn(12)
+    body += f'<circle cx="{dx:.1f}" cy="{dy:.1f}" r="4" fill="{accent}"/>\n'
+    body += (f'<text x="{dx + 8:.1f}" y="{dy + 4:.1f}" font-family="ui-monospace,Menlo,monospace" '
+             f'font-size="11" fill="{accent}">DATUM 12m</text>\n')
+
+    body += svg_close()
+    return body
+
+
+# ---------- main ----------
+
 def main():
     tokens = json.loads(TOKENS_PATH.read_text())
+    sub = tokens["substrate"]
+    bg_panel = sub["tactical_dark_panel"]
+    bg_card = sub["tactical_dark_bg"]
+    sub_text = sub["tactical_text_secondary"]
+
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     print(f"Generating SVG patterns into {OUT_DIR.relative_to(REPO_ROOT)}/")
 
@@ -172,7 +603,7 @@ def main():
     for c in cs["classes"]:
         write(
             OUT_DIR / f"confidence_stipple_{c['name']}.svg",
-            stipple_svg(c["dot_radius_px"], c["spacing_px"], cs["fill"], c["label"]),
+            stipple_swatch(c["dot_radius_px"], c["spacing_px"], cs["fill"], bg_panel, c["label"], sub_text),
         )
 
     # Slope hachure per slope band (skip the "none" band)
@@ -181,38 +612,54 @@ def main():
             continue
         write(
             OUT_DIR / f"slope_hachure_{s['name']}.svg",
-            hachure_svg(s["spacing_px"], s["stroke_width_px"], s["stroke"], s["label"]),
+            hachure_swatch(s["spacing_px"], s["stroke_width_px"], s["stroke"], bg_panel, s.get("fill"), s["label"], sub_text),
         )
 
     # Denied zone crosshatch
     d = tokens["palettes"]["denied_red_family"]
     write(
         OUT_DIR / "denied_zone_crosshatch.svg",
-        crosshatch_svg(d["stroke"], d["fill_tint"], d["fill_tint_alpha"], d["spacing_px"], d["stroke_width_px"]),
+        crosshatch_swatch(d["stroke"], d["fill_tint"], d["fill_tint_alpha"], d["spacing_px"], d["stroke_width_px"], bg_panel),
     )
 
-    # Uncertainty wash per tier
+    # Hillshade grain + contour hachure swatches
+    write(OUT_DIR / "hillshade_grain.svg", hillshade_grain_swatch(tokens))
+    write(OUT_DIR / "contour_hachure.svg", contour_hachure_swatch(tokens))
+
+    # Uncertainty wash per tier (now with motif)
     for t in tokens["palettes"]["uncertainty_wash_orange_red_family"]["tiers"]:
         write(
             OUT_DIR / f"uncertainty_wash_{t['name'].lower()}.svg",
-            wash_svg(t["fill"], t["alpha"], f"{t['name']} ({t['label']})"),
+            wash_motif(t["motif"], t["fill"], t["alpha"], f"{t['name']} {t['label']}", bg_panel, sub_text, sub["tactical_accent_green"]),
         )
 
     # Scan line overlay
     sl = tokens["palettes"]["scan_line_overlay"]
     write(
         OUT_DIR / "scan_line_overlay.svg",
-        scan_lines_svg(sl["stroke"], sl["stroke_width_px"], sl["spacing_px"], sl["alpha"]),
+        scan_lines_swatch(sl["stroke"], sl["stroke_width_px"], sl["spacing_px"], sl["alpha"], bg_panel),
     )
 
-    # Tactical hypso swatch
+    # Hypsometric continuous ramp
     write(
         OUT_DIR / "tactical_hypso_first_5.svg",
-        hypso_swatch_svg(tokens["palettes"]["tactical_hypso"]["bands"]),
+        hypso_ramp(tokens["palettes"]["tactical_hypso"]["bands"], bg_card, sub_text),
     )
 
-    # Canonical layer stack schematic
+    # Slope severity bar with mobility labels
+    write(
+        OUT_DIR / "slope_severity_bar.svg",
+        slope_bar(tokens["palettes"]["slope_severity"]["bands"], bg_card, sub_text),
+    )
+
+    # Canonical layer stack schematic (light bg, kept legible)
     write(OUT_DIR / "layer_stack.svg", layer_stack_svg())
+
+    # NYC harbor elevation profile
+    write(OUT_DIR / "elevation_profile_nyc_harbor.svg", elevation_profile_nyc(tokens))
+
+    # Composite design system overview poster
+    write(OUT_DIR / "design_system_overview.svg", design_system_overview(tokens))
 
     print("Done.")
 

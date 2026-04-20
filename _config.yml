@@ -1,4 +1,4 @@
 title: SIGINT Terrain Rendering Engine
 description: Deterministic compiler for tactical terrain, telemetry, and denial geometry. Treats rendering as evidence handling.
-theme: jekyll-theme-cayman
+theme: jekyll-theme-hacker
 show_downloads: false

@@ -140,21 +140,22 @@ def hypso_swatch_svg(bands) -> str:
 
 def layer_stack_svg() -> str:
     """Schematic of the 7 canonical layers, side-on."""
-    body = svg_open(width=320, height=240)
-    body += '<rect width="320" height="240" fill="#fdfcf8"/>\n'
+    W, H = 520, 240
+    body = svg_open(width=W, height=H)
+    body += f'<rect width="{W}" height="{H}" fill="#fdfcf8"/>\n'
     layers = [
-        ("1. base imagery",          "#cfd2c7"),
-        ("2. hillshade (overlay)",   "#9aa097"),
-        ("3. contour / hachure",     "#3f4a4f"),
-        ("4. confidence stipple",    "#1c1c1c"),
-        ("5. uncertainty wash",      "#e76f51"),
-        ("6. denied crosshatch",     "#b1241c"),
-        ("7. scan lines (live)",     "#9bd1ff"),
+        ("1. base imagery",                       "#cfd2c7"),
+        ("2. hillshade (overlay, 55-65%)",        "#9aa097"),
+        ("3. contour / hachure (multiply)",       "#3f4a4f"),
+        ("4. confidence stipple (screen)",        "#1c1c1c"),
+        ("5. uncertainty wash (by age tier)",     "#e76f51"),
+        ("6. denied crosshatch (red family)",     "#b1241c"),
+        ("7. scan lines (live feeds, 4%)",        "#9bd1ff"),
     ]
     y = 30
     for name, color in layers:
-        body += f'  <rect x="20" y="{y}" width="200" height="14" fill="{color}" fill-opacity="0.85" stroke="#222" stroke-width="0.5"/>\n'
-        body += f'  <text x="230" y="{y + 11}" font-family="monospace" font-size="10" fill="#111">{name}</text>\n'
+        body += f'  <rect x="20" y="{y}" width="180" height="14" fill="{color}" fill-opacity="0.85" stroke="#222" stroke-width="0.5"/>\n'
+        body += f'  <text x="210" y="{y + 11}" font-family="monospace" font-size="11" fill="#111">{name}</text>\n'
         y += 24
     body += '<text x="20" y="20" font-family="monospace" font-size="11" fill="#111" font-weight="bold">Canonical Layer Order (bottom \u2192 top)</text>\n'
     body += svg_close()
